@@ -1,8 +1,7 @@
 import type { Expense } from '../types/finance';
-import { addMonths } from 'date-fns';
+import { addMonths } from './date-helpers';
 
 export const generateInstallments = (baseExpense: Expense): Expense[] => {
-  // Se não for parcelado ou não tiver número de parcelas, retorna apenas o gasto original
   if (!baseExpense.isInstallment || !baseExpense.totalInstallments) {
     return [{ ...baseExpense, id: baseExpense.id || crypto.randomUUID() }];
   }
@@ -17,9 +16,8 @@ export const generateInstallments = (baseExpense: Expense): Expense[] => {
       ...baseExpense,
       id: crypto.randomUUID(),
       groupId,
-      date: installmentDate.toISOString(),
+      date: installmentDate.toISOString().split('T')[0],
       currentInstallment: i + 1,
-      // O isInstallment permanece true para todas
     });
   }
 
