@@ -8,7 +8,6 @@ export function AddExpenseForm({ onClose }: { onClose: () => void }) {
   const { addExpense } = useFinance();
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Estados do Formulário
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
@@ -33,7 +32,6 @@ export function AddExpenseForm({ onClose }: { onClose: () => void }) {
 
     addExpense(newExpense);
     
-    // Feedback de Sucesso
     setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);
@@ -43,7 +41,7 @@ export function AddExpenseForm({ onClose }: { onClose: () => void }) {
 
   if (showSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center animate-in fade-in zoom-in duration-300">
+      <div className="flex flex-col items-center justify-center p-12 text-center">
         <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4">
           <CheckCircle2 size={48} />
         </div>
@@ -63,13 +61,12 @@ export function AddExpenseForm({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="space-y-4">
-        {/* Descrição e Valor */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-semibold flex items-center gap-2"><Tag size={14}/> Descrição</label>
             <input 
               required
-              className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-pai outline-none transition-all"
+              className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               placeholder="Ex: Supermercado"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -81,7 +78,7 @@ export function AddExpenseForm({ onClose }: { onClose: () => void }) {
               required
               type="number"
               step="0.01"
-              className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-pai outline-none transition-all"
+              className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               placeholder="0,00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -89,7 +86,6 @@ export function AddExpenseForm({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* Membro e Categoria */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-semibold flex items-center gap-2"><Users size={14}/> Quem gastou?</label>
@@ -114,7 +110,6 @@ export function AddExpenseForm({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* Categoria Simples */}
         <div className="space-y-2">
           <label className="text-sm font-semibold">Categoria</label>
           <input 
@@ -125,20 +120,19 @@ export function AddExpenseForm({ onClose }: { onClose: () => void }) {
           />
         </div>
 
-        {/* Lógica de Parcelamento */}
         <div className="p-4 bg-slate-50 rounded-2xl space-y-4">
           <div className="flex items-center justify-between">
             <label className="font-semibold text-sm cursor-pointer flex items-center gap-2">
               <input 
                 type="checkbox" 
-                className="w-4 h-4 rounded text-pai"
+                className="w-4 h-4 rounded text-blue-500"
                 checked={isInstallment}
                 onChange={(e) => setIsInstallment(e.target.checked)}
               />
               Gasto Parcelado
             </label>
             {isInstallment && (
-              <div className="flex items-center gap-2 animate-in slide-in-from-right-2 duration-200">
+              <div className="flex items-center gap-2">
                 <Hash size={16} className="text-slate-400" />
                 <input 
                   type="number"
@@ -157,7 +151,7 @@ export function AddExpenseForm({ onClose }: { onClose: () => void }) {
 
       <button 
         type="submit"
-        className="w-full py-4 bg-pai text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-all active:scale-95"
+        className="w-full py-4 bg-blue-500 text-white rounded-2xl font-bold shadow-lg hover:bg-blue-600 transition-all active:scale-95"
       >
         Salvar Lançamento
       </button>
