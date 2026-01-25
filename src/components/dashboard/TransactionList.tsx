@@ -1,22 +1,24 @@
 import { useFinance } from '../../hooks/useFinance';
 import { FAMILY_MEMBERS } from '../../utils/constants';
-import { isSameMonth, parseISO, format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Trash2, CreditCard, Calendar as CalendarIcon } from 'lucide-react';
+import { isSameMonth, parseISO, formatDate, formatMonth } from '../../utils/date-helpers';
+import { formatCurrency } from '../../utils/currency-helpers';
+import { Trash2, CreditCard, Calendar as CalendarIcon, ReceiptText } from 'lucide-react';
 import type { Expense } from '../../types/finance';
 
 export function TransactionList() {
   const { expenses, selectedMonth, deleteExpense } = useFinance();
 
-  // Filtrar e ordenar por data (mais recentes primeiro)
   const monthlyExpenses = expenses
-    .filter(e => isSameMonth(parseISO(e.date), selectedMonth))
+    .filter(e => {
+      const expenseDate = parseISO(e.date);
+      return !isNaN(expenseDate.getTime()) && isSameMonth(expenseDate, selectedMonth);
+    })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handleDelete = (expense: Expense) => {
     if (expense.isInstallment) {
       const confirmAll = window.confirm(
-        `Este é um gasto parcelado (${expense.currentInstallment}/${expense.totalInstallments}).\n\nOK para excluir TODAS as parcelas deste grupo.\nCancelar para excluir APENAS esta parcela.`
+        `Este é um gasto parcelado (${expense.currentInstallment}/${expense.totalInstallments}).\n\nOK para excluir TODAS as parcelas.\nCancelar para excluir APENAS esta parcela.`
       );
       deleteExpense(expense.id, confirmAll);
     } else {
@@ -28,14 +30,26 @@ export function TransactionList() {
 
   if (monthlyExpenses.length === 0) {
     return (
-      <div className="p-12 text-center bg-white rounded-3xl border border-brand-border">
-        <p className="text-slate-400 italic">Nenhuma transação encontrada para este mês.</p>
-      </div>
+      <section className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-50">
+          <h3 className="font-bold text-lg text-slate-800 text-left">Últimos Lançamentos</h3>
+        </div>
+        <div className="p-12 text-center">
+          <div className="max-w-xs mx-auto space-y-3">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-300">
+              <ReceiptText size={32} />
+            </div>
+            <p className="text-slate-500 font-medium">
+              As transações do mês de {formatMonth(selectedMonth).split(' de ')[0]} aparecerão aqui.
+            </p>
+          </div>
+        </div>
+      </section>
     );
   }
 
   return (
-    <section className="bg-white rounded-3xl border border-brand-border shadow-sm overflow-hidden">
+    <section className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
       <div className="p-6 border-b border-slate-50">
         <h3 className="font-bold text-lg text-slate-800 text-left">Detalhamento de Gastos</h3>
       </div>
@@ -75,7 +89,7 @@ export function TransactionList() {
                     <div className="flex flex-col">
                       <span className="text-sm font-semibold text-slate-800">{expense.description}</span>
                       {expense.isInstallment && (
-                        <span className="text-[10px] font-bold text-pai uppercase flex items-center gap-1 mt-0.5">
+                        <span className="text-[10px] font-bold text-blue-600 uppercase flex items-center gap-1 mt-0.5">
                           <CreditCard size={10} /> Parcela {expense.currentInstallment}/{expense.totalInstallments}
                         </span>
                       )}
@@ -91,13 +105,13 @@ export function TransactionList() {
                   <td className="p-4 text-sm text-slate-500">
                     <div className="flex items-center gap-1.5 font-medium">
                       <CalendarIcon size={14} className="text-slate-300" />
-                      {format(parseISO(expense.date), "dd 'de' MMM", { locale: ptBR })}
+                      {formatDate(expense.date)}
                     </div>
                   </td>
 
                   <td className="p-4">
                     <span className="text-sm font-bold text-slate-900">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(expense.amount)}
+                      {formatCurrency(expense.amount)}
                     </span>
                   </td>
 
