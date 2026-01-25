@@ -1,13 +1,16 @@
 import { createContext } from 'react';
-import type { Expense } from '../types/finance';
+import type { Expense, Subscription } from '../types/finance';
 
 export interface FinanceContextData {
   expenses: Expense[];
+  subscriptions: Subscription[];
   addExpense: (expense: Expense) => void;
   deleteExpense: (id: string, deleteAllFromGroup?: boolean) => void;
+  addSubscription: (subscription: Subscription) => void;
+  deleteSubscription: (id: string) => void;
+  toggleSubscription: (id: string) => void;
   selectedMonth: Date;
   setSelectedMonth: (date: Date) => void;
 }
 
-// Criamos o contexto, mas não o componente Provider
-export const FinanceContext = createContext<FinanceContextData>({} as FinanceContextData);
+export const FinanceContext = createContext<FinanceContextData | undefined>(undefined);
