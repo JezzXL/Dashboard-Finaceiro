@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useFinance } from '../../hooks/useFinance';
 import { FAMILY_MEMBERS } from '../../utils/constants';
 import { X, Calendar, DollarSign, Tag, Users, Hash, CheckCircle2 } from 'lucide-react';
+import { CategorySelector } from './CategorySelector';
 import type { Member, Expense } from '../../types/finance';
 
 export function AddExpenseForm({ onClose }: { onClose: () => void }) {
@@ -18,6 +19,11 @@ export function AddExpenseForm({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!category) {
+      alert('Selecione uma categoria');
+      return;
+    }
 
     const newExpense: Expense = {
       id: crypto.randomUUID(),
@@ -110,15 +116,7 @@ export function AddExpenseForm({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-semibold">Categoria</label>
-          <input 
-            className="w-full p-3 rounded-xl border border-slate-200 outline-none"
-            placeholder="Ex: Alimentação, Lazer..."
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          />
-        </div>
+        <CategorySelector value={category} onChange={setCategory} />
 
         <div className="p-4 bg-slate-50 rounded-2xl space-y-4">
           <div className="flex items-center justify-between">
