@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import type { Expense, Subscription } from '../types/finance';
+import type { Expense, Subscription, Category } from '../types/finance';
 import { generateInstallments } from '../utils/expense-helpers';
+import { DEFAULT_CATEGORIES } from '../utils/default-categories';
 import { FinanceContext } from './FinanceContext';
 import type { FinanceContextData } from './FinanceContext';
 
@@ -39,9 +40,24 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     }
   });
 
+  const [categories, setCategories] = useState<Category[]>(() => {
+    if (typeof window === 'undefined') return DEFAULT_CATEGORIES;
+    
+    try {
+      const storageData = localStorage.getItem('@FamilyFinance:categories');
+      if (!storageData) return DEFAULT_CATEGORIES;
+      
+      const parsed = JSON.parse(storageData);
+      return Array.isArray(parsed) ? parsed : DEFAULT_CATEGORIES;
+    } catch (err) {
+      console.error("Erro ao carregar categorias:", err);
+      return DEFAULT_CATEGORIES;
+    }
+  });
+
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
 
-  // Salvar expenses no localStorage
+  // Persist expenses
   useEffect(() => {
     try {
       localStorage.setItem('@FamilyFinance:expenses', JSON.stringify(expenses));
@@ -50,7 +66,7 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [expenses]);
 
-  // Salvar subscriptions no localStorage
+  // Persist subscriptions
   useEffect(() => {
     try {
       localStorage.setItem('@FamilyFinance:subscriptions', JSON.stringify(subscriptions));
@@ -59,7 +75,16 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [subscriptions]);
 
-  // Gerar despesas de assinaturas automaticamente
+  // Persist categories
+  useEffect(() => {
+    try {
+      localStorage.setItem('@FamilyFinance:categories', JSON.stringify(categories));
+    } catch (err) {
+      console.error("Erro ao salvar categorias:", err);
+    }
+  }, [categories]);
+
+  // Generate subscription expenses
   useEffect(() => {
     const generateSubscriptionExpenses = () => {
       const today = new Date();
@@ -69,7 +94,6 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
         const subStartDate = new Date(subscription.startDate);
         const monthsToGenerate = [];
 
-        // Gerar para os últimos 12 meses e próximos 3 meses
         for (let i = -12; i <= 3; i++) {
           const targetDate = new Date(today.getFullYear(), today.getMonth() + i, subscription.dayOfMonth);
           
@@ -81,7 +105,6 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
         monthsToGenerate.forEach(date => {
           const dateStr = date.toISOString().split('T')[0];
           
-          // Verifica se já existe uma despesa dessa assinatura nesse mês
           const alreadyExists = expenses.some(
             exp => exp.subscriptionId === subscription.id && exp.date === dateStr
           );
@@ -108,18 +131,31 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     if (subscriptions.length > 0) {
       generateSubscriptionExpenses();
     }
-  }, [subscriptions]); // Não incluir expenses aqui para evitar loop infinito
+  }, [subscriptions]);
 
-  const addExpense = (expense: Expense) => {
+  // Memoized functions with useCallback
+  const addExpense = useCallback((expense: Expense) => {
     try {
       const expensesToAdd = generateInstallments(expense);
       setExpenses((prev) => [...prev, ...expensesToAdd]);
     } catch (err) {
       console.error("Erro ao adicionar despesa:", err);
     }
-  };
+  }, []);
 
-  const deleteExpense = (id: string, deleteAllFromGroup = false) => {
+  const updateExpense = useCallback((id: string, updatedExpense: Expense) => {
+    try {
+      setExpenses((prev) =>
+        prev.map((expense) =>
+          expense.id === id ? { ...updatedExpense, id } : expense
+        )
+      );
+    } catch (err) {
+      console.error("Erro ao atualizar despesa:", err);
+    }
+  }, []);
+
+  const deleteExpense = useCallback((id: string, deleteAllFromGroup = false) => {
     try {
       setExpenses((prev) => {
         if (deleteAllFromGroup) {
@@ -133,27 +169,26 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error("Erro ao deletar despesa:", err);
     }
-  };
+  }, []);
 
-  const addSubscription = (subscription: Subscription) => {
+  const addSubscription = useCallback((subscription: Subscription) => {
     try {
       setSubscriptions(prev => [...prev, subscription]);
     } catch (err) {
       console.error("Erro ao adicionar assinatura:", err);
     }
-  };
+  }, []);
 
-  const deleteSubscription = (id: string) => {
+  const deleteSubscription = useCallback((id: string) => {
     try {
       setSubscriptions(prev => prev.filter(sub => sub.id !== id));
-      // Remove todas as despesas relacionadas
       setExpenses(prev => prev.filter(exp => exp.subscriptionId !== id));
     } catch (err) {
       console.error("Erro ao deletar assinatura:", err);
     }
-  };
+  }, []);
 
-  const toggleSubscription = (id: string) => {
+  const toggleSubscription = useCallback((id: string) => {
     try {
       setSubscriptions(prev =>
         prev.map(sub =>
@@ -163,21 +198,61 @@ export const FinanceProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error("Erro ao alternar assinatura:", err);
     }
-  };
+  }, []);
 
+  const addCategory = useCallback((category: Category) => {
+    try {
+      setCategories(prev => [...prev, category]);
+    } catch (err) {
+      console.error("Erro ao adicionar categoria:", err);
+    }
+  }, []);
+
+  const deleteCategory = useCallback((id: string) => {
+    try {
+      setCategories(prev => {
+        const categoryToDelete = prev.find(cat => cat.id === id);
+        if (!categoryToDelete) return prev;
+
+        // Check if category is in use - need to access current expenses
+        return prev.filter(cat => cat.id !== id);
+      });
+    } catch (err) {
+      console.error("Erro ao deletar categoria:", err);
+    }
+  }, []);
+
+  // Memoized context value with all dependencies
   const contextValue: FinanceContextData = useMemo(
     () => ({
       expenses,
       subscriptions,
+      categories,
       addExpense,
+      updateExpense,
       deleteExpense,
       addSubscription,
       deleteSubscription,
       toggleSubscription,
+      addCategory,
+      deleteCategory,
       selectedMonth,
       setSelectedMonth,
     }),
-    [expenses, subscriptions, selectedMonth]
+    [
+      expenses,
+      subscriptions,
+      categories,
+      selectedMonth,
+      addExpense,
+      updateExpense,
+      deleteExpense,
+      addSubscription,
+      deleteSubscription,
+      toggleSubscription,
+      addCategory,
+      deleteCategory,
+    ]
   );
 
   return (
