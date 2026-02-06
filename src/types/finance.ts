@@ -25,7 +25,15 @@ export interface Subscription {
   member: Member;
   startDate: string;
   isActive: boolean;
-  dayOfMonth: number; // Dia do mês que a cobrança ocorre (1-31)
+  dayOfMonth: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  createdAt: string;
 }
 
 export interface FamilyMemberConfig {
